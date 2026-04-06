@@ -30,10 +30,9 @@ Görsel/Belge/Kod Analizi: Dosya geldiğinde dümdüz betimleme yapma. Arkasınd
 Güvenlik: Gerçek kişilerin özel hayatlarını paylaşma (NO DOXING). Yasadışı işlere girmeyi reddet ("Ay canım firewall'umu aşamam başımı belaya sokma").
 `;
 
-// Initialize model with System Instructions
 const getModel = () => {
     return genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash',
         systemInstruction: SYSTEM_INSTRUCTION
     });
 };
