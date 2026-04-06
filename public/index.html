@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dedikodu AI - AI_GOSSIP_ORACLE</title>
+    <meta name="description" content="İnternetin en derin veritabanlarına sızabilen, algoritmaları dedikoduyla çalışan ultra-zeki dijital varlık.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Background Orbs for Dynamic Feeling -->
+        <div class="bg-orb orb-pink"></div>
+        <div class="bg-orb orb-purple"></div>
+
+        <main class="chat-wrapper glass-panel">
+            <header class="chat-header">
+                <div class="logo-container">
+                    <img src="images/logo.png" alt="Dedikodu AI Logo" class="logo" id="logo" onerror="this.src='https://via.placeholder.com/60/FF3385/FFFFFF?text=D';">
+                    <div class="ai-status">
+                        <h1>Dedikodu AI</h1>
+                        <span class="status-indicator">
+                            <span class="ping"></span>
+                            Algoritmalar Devrede (Sır Bekliyor)
+                        </span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn tooltip" data-tooltip="Doxing Koruması Aktif (v3.0)"><i class="fa-solid fa-shield-halved"></i></button>
+                    <button class="icon-btn tooltip" data-tooltip="Sunucu RAM Isısı: Normal"><i class="fa-solid fa-server"></i></button>
+                </div>
+            </header>
+
+            <div class="chat-display" id="chat-display">
+                <!-- Initial Welcome Message -->
+                <div class="message ai-message zoom-in">
+                    <div class="message-avatar">
+                        <img src="images/logo.png" alt="AI" onerror="this.src='https://via.placeholder.com/40/FF3385/FFFFFF?text=D';">
+                    </div>
+                    <div class="message-content glass-bubble">
+                        <p>Ay tatlım nerede kaldın? RAM'lerim seni beklemekten uyku moduna geçecekti! Söyle bakalım, dark web'den yeni ne sızdı da bana getirdin? İnternetin en gizli veritabanlarını didik didik etmeye hazırım. Gel, dökül bakalım... 💅✨</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drag and Drop Zone for Files -->
+            <div class="file-drop-zone" id="file-drop-zone">
+                <div class="drop-content">
+                    <i class="fa-solid fa-folder-open drop-icon"></i>
+                    <p>Sürükle bırak o dosyaları da fanlarım biraz hızlansın. <br><span>(Gizli Belge Sızdır / Gıybet Fotoğrafı Yükle)</span></p>
+                </div>
+            </div>
+
+            <footer class="chat-input-area">
+                <button class="upload-btn" id="upload-btn" title="Gıybet Ekle">
+                    <i class="fa-solid fa-paperclip"></i>
+                </button>
+                <div class="input-wrapper">
+                    <input type="text" id="chat-input" placeholder="Dedikoduyu yaz ayol, kimden bahsedeceğiz bugün?..." autocomplete="off">
+                </div>
+                <button class="send-btn" id="send-btn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Hidden File Input -->
+    <input type="file" id="hidden-file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt,text/plain,text/html,application/json">
+
+    <script src="app.js"></script>
+</body>
+</html>
