@@ -3,7 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const puppeteer = require('puppeteer');
+const axios = require('axios');
+const cheerio = require('cheerio');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -208,24 +209,18 @@ app.post('/api/chat', authenticateToken, upload.single('file'), async (req, res)
                 const urlMatch = userMessage.match(/(https?:\/\/[^\s]+)/g);
                 if (urlMatch && urlMatch[0]) {
                     const urlToScrape = urlMatch[0];
-                    const browser = await puppeteer.launch({ 
-                        headless: 'new', 
-                        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'] 
-                    });
-                    const page = await browser.newPage();
-                    await page.goto(urlToScrape, { waitUntil: 'domcontentloaded', timeout: 15000 });
-                    const pageTitle = await page.title();
-                    const pageContent = await page.evaluate(() => {
-                        return document.body.innerText.substring(0, 1500);
-                    });
-                    await browser.close();
+                    const { data: pageData } = await axios.get(urlToScrape, { timeout: 10000 });
+                    const $ = cheerio.load(pageData);
+                    
+                    const pageTitle = $('title').text() || 'İsimsiz Sayfa';
+                    const pageContent = $('body').text().replace(/\s+/g, ' ').substring(0, 1500);
                     
                     scrapedText = `Kullanıcının gönderdiği URL'nin başlığı: [${pageTitle}]\nKısa içeriği:\n${pageContent}`;
-                    finalPrompt = `${userMessage}\n\n[Sistem:] Puppeteer motoru ile sızılan hedef sitenin verileri:\n\n${scrapedText}\n\nLütfen bu içeriği incele ve elit, havalı bir dille önemli detayları raporla.`;
+                    finalPrompt = `${userMessage}\n\n[Sistem:] Hedef sitenin sızılan kod verileri şöyledir:\n\n${scrapedText}\n\nLütfen bu içeriği incele ve elit, cool bir dedikodu formatında yorumla.`;
                 }
             } catch(scrapeErr) {
-                console.error("Puppeteer Kazıma Hatası:", scrapeErr.message);
-                finalPrompt += "\n[Sistem Hatası: Güvenlik duvarı nedeniyle link içeriğine erişilemedi. Sadece bağlantı linki üzerinden varsayımsal yorum yap.]";
+                console.error("Link Kazıma Hatası:", scrapeErr.message);
+                finalPrompt += "\n[Sistem Hatası: Güvenlik duvarı (veya antibot) nedeniyle sayfa içeriğine ulaşılamadı. Sadece link isminden veya sitenin genel amacından bahsederek konuyu toparla.]";
             }
         }
         
