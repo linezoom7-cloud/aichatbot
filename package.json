@@ -3,13 +3,16 @@
   "version": "1.0.0",
   "description": "Dedikodu AI Backend Server",
   "main": "server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "axios": "^1.14.0",
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
