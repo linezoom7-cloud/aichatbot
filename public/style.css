@@ -169,6 +169,27 @@ body {
 .header-actions {
     display: flex;
     gap: 15px;
+    align-items: center;
+}
+
+.glass-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    appearance: none;
+}
+.glass-select:focus, .glass-select:hover {
+    border-color: var(--primary-color);
+}
+.glass-select option {
+    background: var(--bg-dark);
+    color: var(--text-primary);
 }
 
 .icon-btn {
@@ -191,6 +212,40 @@ body {
     color: var(--secondary-color);
     box-shadow: 0 0 15px var(--secondary-color-glow);
     transform: translateY(-2px);
+}
+
+/* Gossip Meter */
+.gossip-meter-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.gossip-meter-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#gossip-meter {
+    width: 150px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+
+#gossip-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 0 10px var(--primary-color);
 }
 
 /* Chat Display Area */
@@ -279,6 +334,36 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
+.download-btn {
+    position: absolute;
+    bottom: -15px;
+    right: 15px;
+    background: var(--bg-dark);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: var(--transition-smooth);
+    z-index: 10;
+}
+
+.message:hover .download-btn {
+    opacity: 1;
+}
+
+.download-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.1);
+}
+
 .zoom-in {
     animation: zoom-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
@@ -364,11 +449,13 @@ body {
 .input-wrapper {
     flex: 1;
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 #chat-input {
     width: 100%;
-    padding: 16px 20px;
+    padding: 16px 80px 16px 20px; /* secret-btn ve mic-btn var, padding arttı */
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 30px;
@@ -411,6 +498,54 @@ body {
 
 .send-btn:active {
     transform: translateY(1px);
+}
+
+/* Mic Button */
+.mic-btn {
+    position: absolute;
+    right: 45px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    padding: 5px;
+}
+
+.mic-btn:hover {
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.mic-btn.recording {
+    color: var(--primary-color);
+    animation: pulse-mic 1.5s infinite;
+}
+
+/* Secret Button */
+.secret-btn {
+    position: absolute;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: var(--secondary-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    padding: 5px;
+}
+
+.secret-btn:hover {
+    color: var(--text-primary);
+    text-shadow: 0 0 10px var(--secondary-color);
+    transform: scale(1.1) rotate(15deg);
+}
+
+@keyframes pulse-mic {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* Typing Indicator */

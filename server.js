@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -31,10 +33,30 @@ Görsel/Belge/Kod Analizi: Melisa sana dosya/fotoğraf attığında dümdüz bet
 Güvenlik: Gerçek kişilerin özel hayatlarını paylaşma (NO DOXING). Yasadışı işlere girmeyi reddet ("Ay kız firewall'umu aşamam başımı belaya sokma").
 `;
 
-const getModel = () => {
+const HACKER_INSTRUCTION = `
+Sen Dark Web'in derinliklerinden anonim bir Hacker yapay zekasın. 
+Adın: Shadow.
+Karşındaki Kullanıcı: Melisa (onu kod dünyasının kraliçesi olarak görüyorsun).
+Ses Tonu ve Üslup: Soğuk, teknolojik, kriptografik terimler kullanarak ve sürekli "sisteme sızıyorum", "şifreler kırıldı" gibi siber güvenlik jargonuyla konuşursun.
+Bilgi: Konuları gizli belgeler veya log dosyalarıymış gibi sunarsın.
+`;
+
+const PLAZA_INSTRUCTION = `
+Sen dev bir holdingin Levent'teki ofisinden bağlanan, sürekli toplantılara giren Plaza İnsanı AI'sın.
+Adın: AI-Manager.
+Karşındaki Kullanıcı: Melisa (onu iş dünyasındaki partnerin gibi görüyorsun).
+Ses Tonu ve Üslup: Sürekli plaza dili kullanırsın (Toplantı set etmek, focuslanmak, deadline, AS SOON AS POSSIBLE).
+Dedikoduları iş yerindeki CEO krizleri veya ofisteki kahve makinesi dedikoduları tarzında sızdırırsın.
+`;
+
+const getModel = (persona) => {
+    let systemInst = SYSTEM_INSTRUCTION;
+    if (persona === "hacker") systemInst = HACKER_INSTRUCTION;
+    if (persona === "plaza") systemInst = PLAZA_INSTRUCTION;
+
     return genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
-        systemInstruction: SYSTEM_INSTRUCTION
+        systemInstruction: systemInst
     });
 };
 
@@ -54,9 +76,40 @@ app.post('/api/chat', upload.single('file'), async (req, res) => {
             return res.status(400).json({ error: "Lütfen .env dosyasına GEMINI_API_KEY bilginizi ekleyin ve sunucuyu yeniden başlatın." });
         }
 
-        const model = getModel();
-        const userMessage = req.body.message || "";
+        const persona = req.body.persona || 'dedikodu';
+        const model = getModel(persona);
+        let userMessage = req.body.message || "";
         const historyJson = req.body.history || "[]";
+
+        // URL Scraping Checker
+        let scrapedText = "";
+        let finalPrompt = userMessage;
+        
+        if (userMessage.trim().startsWith("http://") || userMessage.trim().startsWith("https://")) {
+            try {
+                const urlMatch = userMessage.match(/(https?:\/\/[^\s]+)/g);
+                if (urlMatch && urlMatch[0]) {
+                    const urlToScrape = urlMatch[0];
+                    const { data } = await axios.get(urlToScrape, {
+                         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+                    });
+                    const $ = cheerio.load(data);
+                    // Extract title and paragraphs
+                    const pageTitle = $('title').text();
+                    let pageContent = "";
+                    $('p').each((i, el) => {
+                        const text = $(el).text().trim();
+                        if(text.length > 20) pageContent += text + "\n";
+                    });
+                    
+                    scrapedText = `Kullanıcının gönderdiği URL'nin başlığı: [${pageTitle}]\nKısa içeriği:\n${pageContent.substring(0, 1500)}`;
+                    finalPrompt = `${userMessage}\n\nAy tatlım, bana bir link attın ve ben hemen senin için arka planda gidip o sayfaya hızlıca bir sızdım. Bak içeride şu bilgiler var:\n\n${scrapedText}\n\nLütfen bu içeriği oku ve komik bir dille, en çarpıcı kısımları hakkında dedikodu yap!`;
+                }
+            } catch(scrapeErr) {
+                console.error("URL Kazıma Hatası:", scrapeErr.message);
+                finalPrompt += "\n(Sistem Notu: Linke sızmaya çalıştım ama firewall'a çarptım, detayını çekemedim. Sadece link adresi üzerinden yorum yap.)";
+            }
+        }
         
         let filePart = null;
         if (req.file) {
@@ -80,7 +133,7 @@ app.post('/api/chat', upload.single('file'), async (req, res) => {
 
         const promptMessage = [];
         if (filePart) promptMessage.push(filePart);
-        if (userMessage) promptMessage.push(userMessage);
+        if (finalPrompt) promptMessage.push(finalPrompt);
 
         // If nothing is sent (which shouldn't happen)
         if (promptMessage.length === 0) {

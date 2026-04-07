@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -27,7 +28,20 @@
                         </span>
                     </div>
                 </div>
+                
+                <!-- Gıybet Metre (Top Bar) -->
+                <div class="gossip-meter-container">
+                    <div class="gossip-meter-label">Gıybet Metre 🔥</div>
+                    <div id="gossip-meter"><div class="fill" id="gossip-fill"></div></div>
+                </div>
+
                 <div class="header-actions">
+                    <select id="persona-select" class="glass-select tooltip" data-tooltip="Karakter Seç">
+                        <option value="dedikodu">Dedikoducu Kız 💅</option>
+                        <option value="hacker">Anonim Hacker 💻</option>
+                        <option value="plaza">Plaza Yöneticisi 🏢</option>
+                    </select>
+                    <button id="tts-btn" class="icon-btn tooltip" data-tooltip="Sesli Yanıt: Kapalı"><i class="fa-solid fa-volume-xmark"></i></button>
                     <button class="icon-btn tooltip" data-tooltip="Doxing Koruması Aktif (v3.0)"><i class="fa-solid fa-shield-halved"></i></button>
                     <button class="icon-btn tooltip" data-tooltip="Sunucu RAM Isısı: Normal"><i class="fa-solid fa-server"></i></button>
                 </div>
@@ -59,6 +73,12 @@
                 </button>
                 <div class="input-wrapper">
                     <input type="text" id="chat-input" placeholder="Dedikoduyu yaz ayol, kimden bahsedeceğiz bugün?..." autocomplete="off">
+                    <button class="mic-btn" id="mic-btn" title="Sesli Söyle">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+                    <button class="secret-btn" id="secret-btn" title="Bana Bir Sır Ver!">
+                        <i class="fa-solid fa-dice"></i>
+                    </button>
                 </div>
                 <button class="send-btn" id="send-btn">
                     <i class="fa-solid fa-paper-plane"></i>
