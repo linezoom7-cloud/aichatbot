@@ -235,48 +235,52 @@ app.post('/api/chat', authenticateToken, upload.single('file'), async (req, res)
         db.all("SELECT role, text FROM messages WHERE user_id = ? ORDER BY id ASC LIMIT 20", [req.user.id], async (err, rows) => {
             if(err) return res.status(500).json({ error: "Veritabanına ulaşılamıyor." });
             
-            let formattedHistory = [];
-            if(rows) {
-                formattedHistory = rows.map(h => ({
-                    role: h.role, // 'user' or 'model'
-                    parts: [{ text: h.text }]
-                }));
-            }
-
-            const chatSession = model.startChat({ history: formattedHistory });
-            const promptMessage = [];
-            if (filePart) promptMessage.push(filePart);
-            if (finalPrompt) promptMessage.push(finalPrompt);
-
-            if (promptMessage.length === 0) {
-                return res.status(400).json({ error: "Mesaj veya dosya göndermelisiniz." });
-            }
-
-            const result = await chatSession.sendMessage(promptMessage);
-            const responseTextRaw = result.response.text();
-            
-            let responseObj = { cevap: responseTextRaw, duygu: "giybet" };
             try {
-                responseObj = JSON.parse(responseTextRaw);
-            } catch(e) {
-                console.error("JSON parse hatası, düz metin dönmüş olabilir.");
-                // Fallback if model disobeys json
-                responseObj = { cevap: responseTextRaw, duygu: "giybet" };
-            }
+                let formattedHistory = [];
+                if(rows) {
+                    formattedHistory = rows.map(h => ({
+                        role: h.role, // 'user' or 'model'
+                        parts: [{ text: h.text }]
+                    }));
+                }
 
-            // Save text to database
-            db.run("INSERT INTO messages (user_id, role, text) VALUES (?, 'user', ?)", [req.user.id, userMessage], (err) => {
-                if(err) console.error(err);
-                db.run("INSERT INTO messages (user_id, role, text) VALUES (?, 'model', ?)", [req.user.id, responseObj.cevap], (err) => {
+                const chatSession = model.startChat({ history: formattedHistory });
+                const promptMessage = [];
+                if (filePart) promptMessage.push(filePart);
+                if (finalPrompt) promptMessage.push(finalPrompt);
+
+                if (promptMessage.length === 0) {
+                    return res.status(400).json({ error: "Mesaj veya dosya göndermelisiniz." });
+                }
+
+                const result = await chatSession.sendMessage(promptMessage);
+                const responseTextRaw = result.response.text();
+                
+                let responseObj = { cevap: responseTextRaw, duygu: "giybet" };
+                try {
+                    responseObj = JSON.parse(responseTextRaw);
+                } catch(e) {
+                    console.error("JSON parse hatası, düz metin dönmüş olabilir.");
+                    responseObj = { cevap: responseTextRaw, duygu: "giybet" };
+                }
+
+                // Save text to database
+                db.run("INSERT INTO messages (user_id, role, text) VALUES (?, 'user', ?)", [req.user.id, userMessage], (err) => {
                     if(err) console.error(err);
-                    res.json({ reply: responseObj.cevap, sentiment: responseObj.duygu });
+                    db.run("INSERT INTO messages (user_id, role, text) VALUES (?, 'model', ?)", [req.user.id, responseObj.cevap], (err) => {
+                        if(err) console.error(err);
+                        res.json({ reply: responseObj.cevap, sentiment: responseObj.duygu });
+                    });
                 });
-            });
+            } catch (innerError) {
+                console.error("Yapay Zeka (Gemini) Bağlantı Hatası:", innerError.message);
+                res.status(500).json({ error: "Sistem Alarmı: Yapay zeka ağlarında (Gemini tarafında) anlık aşırı yoğunluk veya çökme var. Lütfen biraz bekleyip tekrar dene." });
+            }
         });
 
     } catch (error) {
-        console.error("Gemini Error:", error);
-        res.status(500).json({ error: "İşlemcim yandı tatlım! Kısa devre yaptım." });
+        console.error("Genel Hata:", error.message);
+        res.status(500).json({ error: "Bağlantılı sunucularda kritik bir arıza meydana geldi." });
     }
 });
 
