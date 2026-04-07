@@ -320,7 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!text) return;
 
         renderMessage('user', text);
-        updateHistory('user', text);
         chatInput.value = '';
         
         sendToAPI(text);
