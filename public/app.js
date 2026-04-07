@@ -8,12 +8,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const micBtn = document.getElementById('mic-btn');
     const secretBtn = document.getElementById('secret-btn');
     const ttsBtn = document.getElementById('tts-btn');
+    const clearBtn = document.getElementById('clear-btn');
     const personaSelect = document.getElementById('persona-select');
     const gossipFill = document.getElementById('gossip-fill');
 
-    // Load History
-    let chatHistory = JSON.parse(localStorage.getItem('dedikodu_history')) || [];
-    
+    const token = localStorage.getItem('dedikodu_token');
+    if (!token) {
+        window.location.href = '/login.html';
+        return;
+    }
+
     // Status
     let ttsEnabled = false;
     let gossipScore = 0;
@@ -31,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (gossipScore === 100) {
             gossipFill.style.boxShadow = "0 0 20px #fff";
             setTimeout(() => {
-                renderMessage('model', "🔥 **Gıybet Metre Patladı!** Kız sistemlerim alev alev, sana fısıldayacağım sırlar artık güvenlik duvarına sığmıyor...");
+                renderMessage('model', "🔥 **Sistem Aşırı Yüklendi!** Analiz modülleri sınırda çalışıyor, derin veritabanlarında keşfettiğim kritik sırları paylaşmak üzereyim...", false, "saskin");
                 gossipScore = 0;
                 gossipFill.style.width = gossipScore + '%';
                 gossipFill.style.boxShadow = "0 0 10px var(--primary-color)";
@@ -78,9 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Render message
-    const renderMessage = (role, text, isFile = false) => {
+    const renderMessage = (role, text, isFile = false, sentiment = "giybet") => {
         const msgDiv = document.createElement('div');
-        msgDiv.className = `message ${role === 'user' ? 'user-message' : 'ai-message'} zoom-in`;
+        
+        let sentimentClass = "";
+        if (role === 'model' || role === 'ai') sentimentClass = "sentiment-" + sentiment;
+
+        msgDiv.className = `message ${role === 'user' ? 'user-message' : 'ai-message'} zoom-in ${sentimentClass}`;
         
         let avatarSrc = role === 'user' ? 'https://via.placeholder.com/40/a82eed/ffffff?text=U' : 'images/logo.png';
         const aiFallback = `onerror="this.src='https://via.placeholder.com/40/FF3385/FFFFFF?text=D';"`;
@@ -136,14 +144,106 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Initial render history
-    if(chatHistory.length > 0) {
-        // Clear default welcome message
-        chatDisplay.innerHTML = '';
-        chatHistory.forEach(h => {
-             renderMessage(h.role, h.text);
+    // Emotion Color Mapper
+    const updateThemeBySentiment = (sentiment) => {
+        const root = document.documentElement;
+        switch(sentiment) {
+            case 'kizgin':
+                root.style.setProperty('--primary-color', '#ff2a2a');
+                root.style.setProperty('--primary-color-glow', 'rgba(255, 42, 42, 0.6)');
+                break;
+            case 'saskin':
+                root.style.setProperty('--primary-color', '#ccff00');
+                root.style.setProperty('--primary-color-glow', 'rgba(204, 255, 0, 0.6)');
+                break;
+            case 'uzgun':
+                root.style.setProperty('--primary-color', '#2a75ff');
+                root.style.setProperty('--primary-color-glow', 'rgba(42, 117, 255, 0.6)');
+                break;
+            case 'neseli':
+            case 'giybet':
+            default:
+                root.style.setProperty('--primary-color', '#ff3385');
+                root.style.setProperty('--primary-color-glow', 'rgba(255, 51, 133, 0.6)');
+                break;
+        }
+    };
+
+    // Load history from API
+    const loadHistoryFromDB = async () => {
+        try {
+            const res = await fetch('/api/history', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.status === 401 || res.status === 403) {
+                localStorage.removeItem('dedikodu_token');
+                window.location.href = '/login.html';
+                return;
+            }
+            const data = await res.json();
+            if(data && data.length > 0) {
+                chatDisplay.innerHTML = '';
+                // Since DB history doesn't have sentiment saved (only text), we use default glow
+                data.forEach(h => renderMessage(h.role, h.text, false, "giybet"));
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    loadHistoryFromDB();
+
+    // Init Particles
+    if(window.particlesJS) {
+        particlesJS("particles-js", {
+          "particles": {
+            "number": {"value": 80, "density": {"enable": true, "value_area": 800}},
+            "color": {"value": "#ffffff"},
+            "shape": {"type": "circle"},
+            "opacity": {"value": 0.2, "random": false},
+            "size": {"value": 3, "random": true},
+            "line_linked": {"enable": true, "distance": 150, "color": "#ffffff", "opacity": 0.1, "width": 1},
+            "move": {"enable": true, "speed": 1.5, "direction": "none", "random": false, "straight": false, "out_mode": "out", "bounce": false}
+          },
+          "interactivity": {
+            "detect_on": "canvas",
+            "events": {
+              "onhover": {"enable": true, "mode": "repulse"},
+              "onclick": {"enable": true, "mode": "push"},
+              "resize": true
+            },
+            "modes": {
+              "repulse": {"distance": 100, "duration": 0.4},
+              "push": {"particles_nb": 4}
+            }
+          },
+          "retina_detect": true
         });
     }
+
+    // Clear History Logic
+    clearBtn.addEventListener('click', async () => {
+        if(!confirm("Veritabanındaki tüm analiz geçmişini silmek istediğine emin misin?")) return;
+        try {
+            await fetch('/api/history', {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            chatDisplay.innerHTML = `
+                <div class="message ai-message zoom-in">
+                    <div class="message-avatar">
+                         <img src="images/logo.png" alt="AI">
+                    </div>
+                    <div class="message-content glass-bubble">
+                        <p>Sistem belleği başarıyla formatlandı. Yepyeni analizler için hazırım Melisa. ✨</p>
+                    </div>
+                </div>
+            `;
+            gossipScore = 0;
+            updateGossipMeter();
+        } catch(e) {
+            console.error(e);
+        }
+    });
 
     // Add Typing Indicator
     const showTypingIndicator = () => {
@@ -173,13 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if(typingMsg) typingMsg.remove();
     };
 
-    const updateHistory = (role, text) => {
-        chatHistory.push({ role, text });
-        // Keep only last 20 messages to avoid limit issues
-        if(chatHistory.length > 20) chatHistory = chatHistory.slice(chatHistory.length - 20);
-        localStorage.setItem('dedikodu_history', JSON.stringify(chatHistory));
-    };
-
     // API Call
     const sendToAPI = async (text, file = null) => {
         const typingId = showTypingIndicator();
@@ -189,12 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (text) formData.append('message', text);
             if (file) formData.append('file', file);
             formData.append('persona', personaSelect.value);
-            
-            // Exclude the file event explicitly from the formatted history sent to API, Gemini needs clean dialogue for memory.
-            formData.append('history', JSON.stringify(chatHistory));
 
             const response = await fetch('/api/chat', {
                 method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
 
@@ -202,17 +293,24 @@ document.addEventListener('DOMContentLoaded', () => {
             removeTypingIndicator(typingId);
 
             if (data.error) {
-                renderMessage('ai', "🚨 Sistem Hatası 🚨 <br><br>" + data.error);
+                if(response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('dedikodu_token');
+                    window.location.href = '/login.html';
+                } else {
+                    renderMessage('ai', "🚨 Sistem Mesajı 🚨 <br><br>" + data.error, false, "kizgin");
+                }
                 return;
             }
 
-            renderMessage('model', data.reply);
-            updateHistory('model', data.reply);
+            // Arayüz rengini duyguya göre değiştir
+            if(data.sentiment) updateThemeBySentiment(data.sentiment);
+
+            renderMessage('model', data.reply, false, data.sentiment);
             updateGossipMeter();
             
         } catch (error) {
             removeTypingIndicator(typingId);
-            renderMessage('ai', "Ay işlemcim tıkandı tatlım! Sunucuya bağlanamıyorum, birisi Ethernet kablomu mu kemirdi?");
+            renderMessage('ai', "Bağlantı Hatası: Sunucuyla iletişim kurulamıyor veya sistemde bir darboğaz var.", false, "uzgun");
         }
     };
 
@@ -293,13 +391,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const handleFileUpload = (file) => {
+        if (file.size > 5 * 1024 * 1024) {
+            renderMessage('ai', "🚨 İhlal Tespit Edildi: Dosya boyutu çok büyük (Max: 5MB). Sunucu güvenliği için reddedildi.", false, "kizgin");
+            return;
+        }
+
         fileDropZone.classList.remove('active', 'drag-over');
         renderMessage('user', file.name, true);
-        
-        // We will send file to API directly. We don't save the file in history, 
-        // we might just say "A file was uploaded" in our local history if we wanted, 
-        // but for Gemini we pass it in the prompt part.
-        sendToAPI("Al canım, sana incelemen için dedikoduluk bir dosya/resim gönderdim. İçinde ne var?", file);
+        sendToAPI("[Dosya İletildi] Bu dosyanın içerisindekileri detaylıca analiz eder misin?", file);
     };
 
     hiddenFileInput.addEventListener('change', (e) => {

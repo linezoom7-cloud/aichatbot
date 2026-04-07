@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dedikodu AI - Sisteme Sız</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+        .auth-panel {
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            text-align: center;
+            border-radius: 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 30px rgba(255, 51, 133, 0.2);
+            animation: slide-up 0.5s ease;
+        }
+        .auth-panel h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+            font-size: 2rem;
+        }
+        .auth-panel p {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: white;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .input-group input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px rgba(255, 51, 133, 0.3);
+        }
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            font-family: inherit;
+        }
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--primary-color-glow);
+        }
+        .switch-mode {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .switch-mode span {
+            color: var(--primary-color);
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        #error-msg {
+            color: #ff4a4a;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orb orb-pink"></div>
+    <div class="bg-orb orb-purple"></div>
+
+    <div class="auth-container">
+        <div class="auth-panel" id="login-box">
+            <h1>Dedikodu AI</h1>
+            <p>Gizli ağa erişmek için kimliğini doğrula.</p>
+            
+            <div id="error-msg"></div>
+
+            <div class="input-group">
+                <label>Gizli Kod Adı (Kullanıcı Adı)</label>
+                <input type="text" id="username" placeholder="örn. melisa" autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>Şifre (Giriş Şifresi)</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+
+            <button class="auth-btn" id="action-btn">Sisteme Sız</button>
+
+            <div class="switch-mode" id="toggle-mode">
+                Hesabın yok mu? <span>Yeni Ajan Kaydı</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let isLogin = true;
+
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const actionBtn = document.getElementById('action-btn');
+        const toggleMode = document.getElementById('toggle-mode');
+        const errorMsg = document.getElementById('error-msg');
+
+        // Check if already logged in
+        if (localStorage.getItem('dedikodu_token')) {
+            window.location.href = '/';
+        }
+
+        const showError = (msg) => {
+            errorMsg.innerText = msg;
+            errorMsg.style.display = 'block';
+        };
+
+        toggleMode.addEventListener('click', () => {
+            isLogin = !isLogin;
+            if(isLogin) {
+                actionBtn.innerText = "Sisteme Sız";
+                toggleMode.innerHTML = "Hesabın yok mu? <span>Yeni Ajan Kaydı</span>";
+                errorMsg.style.display = 'none';
+            } else {
+                actionBtn.innerText = "Kayıt Ol";
+                toggleMode.innerHTML = "Zaten ajan mısın? <span>Giriş Yap</span>";
+                errorMsg.style.display = 'none';
+            }
+        });
+
+        actionBtn.addEventListener('click', async () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+
+            if(!username || !password) {
+                return showError("Eksik bilgi girdin canım!");
+            }
+
+            actionBtn.innerText = "Bekle...";
+            try {
+                const endpoint = isLogin ? '/login' : '/register';
+                const res = await fetch(API_URL + endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                
+                if(!res.ok) {
+                    showError(data.error || "Bir hata oluştu.");
+                } else {
+                    if (data.token) {
+                        localStorage.setItem('dedikodu_token', data.token);
+                        window.location.href = '/';
+                    }
+                }
+            } catch (err) {
+                showError("Sunucu ağına ulaşılamıyor.");
+            } finally {
+                actionBtn.innerText = isLogin ? "Sisteme Sız" : "Kayıt Ol";
+            }
+        });
+    </script>
+</body>
+</html>
